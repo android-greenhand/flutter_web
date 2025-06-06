@@ -7,6 +7,9 @@ on:
     branches: [ main ]  # 或者你的主分支名称
   workflow_dispatch:    # 允许手动触发
 
+permissions:
+  contents: write  # 需要这个权限来部署到 GitHub Pages
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,4 +42,11 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: web-build
-        path: build/web/ 
+        path: build/web/
+    
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build/web
+        publish_branch: gh-pages  # 部署到这个分支 
