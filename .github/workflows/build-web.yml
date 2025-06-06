@@ -17,10 +17,10 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.19.3'  # 最新的稳定版本，包含 Dart SDK 3.7.0
+        flutter-version: '3.32.2'  # 使用错误信息建议的版本
         channel: 'stable'
         cache: true
-        cache-key: flutter-3.19.3-stable
+        cache-key: flutter-3.32.2-stable
     
     - name: Enable Flutter Web
       run: flutter config --enable-web
