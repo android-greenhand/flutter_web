@@ -31,3 +31,8 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+static const String _token = String.fromEnvironment(
+  'GITHUB_TOKEN', 
+  defaultValue: '', // 移除默认值，使用空字符串
+);
