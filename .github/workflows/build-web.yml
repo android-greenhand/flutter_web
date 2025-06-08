@@ -42,7 +42,7 @@ jobs:
     - name: Build Web
       run: |
         source .env.sh
-        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN
+        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --base-href /flutter/
     
     - name: Clean up
       run: |
