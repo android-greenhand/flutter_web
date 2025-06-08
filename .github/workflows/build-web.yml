@@ -47,6 +47,9 @@ jobs:
         find build/web -type f -name "*.js" -exec sed -i 's/ghp_[^"]*"/""/g' {} +
         # 确保不会暴露完整的 token
         find build/web -type f -name "*.js" -exec sed -i 's/GITHUB_TOKEN[^"]*"/GITHUB_TOKEN""/g' {} +
+        # 清理其他可能的 token 格式
+        find build/web -type f -name "*.js" -exec sed -i 's/github_pat_[^"]*"/""/g' {} +
+        find build/web -type f -name "*.js" -exec sed -i 's/gho_[^"]*"/""/g' {} +
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -59,4 +62,6 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./build/web
-        publish_branch: gh-pages  # 部署到这个分支 
+        publish_branch: gh-pages  # 部署到这个分支
+        force_orphan: true  # 强制创建新的分支
+        commit_message: "Deploy to GitHub Pages"  # 自定义提交信息 
