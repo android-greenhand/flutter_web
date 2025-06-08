@@ -34,22 +34,28 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
     
-    - name: Build Web
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create env file
       run: |
-        # 构建应用，使用环境变量传递 token
+        echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
+        echo "export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env.sh
+    
+    - name: Build Web
+      run: |
+        source .env.sh
         flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN
     
-    - name: Clean build artifacts
+    - name: Clean up
       run: |
-        # 清理构建产物中的 token
+        # 删除环境文件
+        rm -f .env .env.sh
+        # 清理构建产物
         find build/web -type f -name "*.js" -exec sed -i 's/ghp_[^"]*"/""/g' {} +
-        # 确保不会暴露完整的 token
-        find build/web -type f -name "*.js" -exec sed -i 's/GITHUB_TOKEN[^"]*"/GITHUB_TOKEN""/g' {} +
-        # 清理其他可能的 token 格式
         find build/web -type f -name "*.js" -exec sed -i 's/github_pat_[^"]*"/""/g' {} +
         find build/web -type f -name "*.js" -exec sed -i 's/gho_[^"]*"/""/g' {} +
+        find build/web -type f -name "*.js" -exec sed -i 's/GITHUB_TOKEN[^"]*"/GITHUB_TOKEN""/g' {} +
+        # 删除可能包含 token 的文件
+        find build/web -type f -name "*.js.map" -delete
+        find build/web -type f -name "*.dart.js" -delete
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
