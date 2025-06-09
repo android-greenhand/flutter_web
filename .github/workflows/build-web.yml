@@ -14,12 +14,23 @@ on:
 
 # 工作流权限配置：需要写入权限来部署到 GitHub Pages
 permissions:
-  contents: write  # 需要这个权限来部署到 GitHub Pages
+  contents: read    # 读取仓库内容
+  pages: write     # 写入 GitHub Pages
+  id-token: write  # 写入 ID token，用于 Pages 部署认证
+
+# 并发控制：防止多个部署同时进行
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   # 构建任务
   build:
     runs-on: ubuntu-latest  # 使用最新的 Ubuntu 运行器
+    # GitHub Pages 环境配置
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
     # 检出代码
@@ -57,7 +68,7 @@ jobs:
       run: |
         source .env.sh
         flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --base-href /flutter_web/
-
+    
     # 清理敏感信息和临时文件
     - name: Clean up
       run: |
@@ -72,19 +83,19 @@ jobs:
         find build/web -type f -name "*.js.map" -delete
         find build/web -type f -name "*.dart.js" -delete
     
-    # 上传构建产物到 GitHub Actions
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+    # 配置 GitHub Pages
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+    
+    # 上传构建产物
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        name: web-build
-        path: build/web/
+        path: './build/web'
     
     # 部署到 GitHub Pages
     - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
+      id: deployment
+      uses: actions/deploy-pages@v4
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./build/web
-        publish_branch: gh-pages  # 部署到这个分支
-        force_orphan: true  # 强制创建新的分支
-        commit_message: "Deploy to GitHub Pages"  # 自定义提交信息 
+        token: ${{ secrets.GITHUB_TOKEN }} 
