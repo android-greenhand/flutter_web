@@ -1,5 +1,10 @@
+# 工作流名称：构建 Flutter Web 应用
 name: Build Flutter Web
 
+# 触发条件：
+# 1. 当代码推送到 main 分支时
+# 2. 当创建针对 main 分支的 Pull Request 时
+# 3. 手动触发工作流时
 on:
   push:
     branches: [ main ]  # 或者你的主分支名称
@@ -7,48 +12,58 @@ on:
     branches: [ main ]  # 或者你的主分支名称
   workflow_dispatch:    # 允许手动触发
 
+# 工作流权限配置：需要写入权限来部署到 GitHub Pages
 permissions:
   contents: write  # 需要这个权限来部署到 GitHub Pages
 
 jobs:
+  # 构建任务
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # 使用最新的 Ubuntu 运行器
 
     steps:
+    # 检出代码
     - uses: actions/checkout@v4
     
+    # 设置 Flutter 环境
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.32.2'  # 使用错误信息建议的版本
-        channel: 'stable'
-        cache: true
-        cache-key: flutter-3.32.2-stable
+        channel: 'stable'         # 使用稳定版
+        cache: true              # 启用缓存
+        cache-key: flutter-3.32.2-stable  # 缓存键
     
+    # 启用 Flutter Web 支持
     - name: Enable Flutter Web
       run: flutter config --enable-web
     
+    # 显示 Flutter 版本信息（用于调试）
     - name: Get Flutter version
       run: flutter --version
     
+    # 安装项目依赖
     - name: Install dependencies
       run: flutter pub get
     
+    # 创建环境变量文件，用于存储 GitHub Token
     - name: Create env file
       run: |
         echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
         echo "export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env.sh
     
+    # 构建 Web 应用
     - name: Build Web
       run: |
         source .env.sh
-        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --base-href /flutter/
+        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --base-href /flutter_web/
     
+    # 清理敏感信息和临时文件
     - name: Clean up
       run: |
         # 删除环境文件
         rm -f .env .env.sh
-        # 清理构建产物
+        # 清理构建产物中的 token
         find build/web -type f -name "*.js" -exec sed -i 's/ghp_[^"]*"/""/g' {} +
         find build/web -type f -name "*.js" -exec sed -i 's/github_pat_[^"]*"/""/g' {} +
         find build/web -type f -name "*.js" -exec sed -i 's/gho_[^"]*"/""/g' {} +
@@ -57,12 +72,14 @@ jobs:
         find build/web -type f -name "*.js.map" -delete
         find build/web -type f -name "*.dart.js" -delete
     
+    # 上传构建产物到 GitHub Actions
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: web-build
         path: build/web/
     
+    # 部署到 GitHub Pages
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
