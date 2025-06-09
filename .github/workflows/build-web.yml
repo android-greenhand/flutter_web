@@ -85,6 +85,6 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./build/web
-        publish_branch: main # 部署到这个分支
+        publish_branch: gh-pages  # 部署到这个分支
         force_orphan: true  # 强制创建新的分支
         commit_message: "Deploy to GitHub Pages"  # 自定义提交信息 
