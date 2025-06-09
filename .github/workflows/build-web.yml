@@ -56,8 +56,7 @@ jobs:
     - name: Build Web
       run: |
         source .env.sh
-#        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --base-href /flutter_web/
-        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN
+        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --base-href /flutter_web/
 
     # 清理敏感信息和临时文件
     - name: Clean up
@@ -86,6 +85,6 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./build/web
-        publish_branch: gh-pages  # 部署到这个分支
+        publish_branch: main # 部署到这个分支
         force_orphan: true  # 强制创建新的分支
         commit_message: "Deploy to GitHub Pages"  # 自定义提交信息 
