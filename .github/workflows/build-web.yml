@@ -90,6 +90,7 @@ jobs:
     # 创建 service worker 文件
     - name: Create service worker
       run: |
+        # 创建基本的 service worker 文件
         echo 'const CACHE_NAME = "flutter-app-cache-v1";' > build/web/flutter_service_worker.js
         echo 'const RESOURCES = {' >> build/web/flutter_service_worker.js
         echo '  "/flutter_web/": "index.html",' >> build/web/flutter_service_worker.js
@@ -98,67 +99,64 @@ jobs:
         echo '  "/flutter_web/flutter.js": "flutter.js",' >> build/web/flutter_service_worker.js
         echo '  "/flutter_web/flutter_service_worker.js": "flutter_service_worker.js"' >> build/web/flutter_service_worker.js
         echo '};' >> build/web/flutter_service_worker.js
-    
-    # 添加 service worker 事件监听器
-    - name: Add service worker event listeners
-      run: |
-        cat >> build/web/flutter_service_worker.js << 'EOL'
-
-self.addEventListener('install', function(event) {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return Promise.all(
-        Object.entries(RESOURCES).map(([url, file]) => {
-          return fetch(url)
-            .then(response => {
-              if (!response.ok) {
-                throw new Error(`Failed to fetch ${url}`);
-              }
-              return cache.put(url, response);
-            })
-            .catch(error => {
-              console.error(`Error caching ${url}:`, error);
-            });
-        })
-      );
-    })
-  );
-});
-
-self.addEventListener('activate', function(event) {
-  event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
-});
-
-self.addEventListener('fetch', function(event) {
-  event.respondWith(
-    caches.match(event.request).then(function(response) {
-      if (response) {
-        return response;
-      }
-      return fetch(event.request).then(function(response) {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then(function(cache) {
-          cache.put(event.request, responseToCache);
-        });
-        return response;
-      });
-    })
-  );
-});
-EOL
+        
+        # 添加 install 事件监听器
+        echo 'self.addEventListener("install", function(event) {' >> build/web/flutter_service_worker.js
+        echo '  event.waitUntil(' >> build/web/flutter_service_worker.js
+        echo '    caches.open(CACHE_NAME).then(function(cache) {' >> build/web/flutter_service_worker.js
+        echo '      return Promise.all(' >> build/web/flutter_service_worker.js
+        echo '        Object.entries(RESOURCES).map(([url, file]) => {' >> build/web/flutter_service_worker.js
+        echo '          return fetch(url)' >> build/web/flutter_service_worker.js
+        echo '            .then(response => {' >> build/web/flutter_service_worker.js
+        echo '              if (!response.ok) {' >> build/web/flutter_service_worker.js
+        echo '                throw new Error(`Failed to fetch ${url}`);' >> build/web/flutter_service_worker.js
+        echo '              }' >> build/web/flutter_service_worker.js
+        echo '              return cache.put(url, response);' >> build/web/flutter_service_worker.js
+        echo '            })' >> build/web/flutter_service_worker.js
+        echo '            .catch(error => {' >> build/web/flutter_service_worker.js
+        echo '              console.error(`Error caching ${url}:`, error);' >> build/web/flutter_service_worker.js
+        echo '            });' >> build/web/flutter_service_worker.js
+        echo '        })' >> build/web/flutter_service_worker.js
+        echo '      );' >> build/web/flutter_service_worker.js
+        echo '    })' >> build/web/flutter_service_worker.js
+        echo '  );' >> build/web/flutter_service_worker.js
+        echo '});' >> build/web/flutter_service_worker.js
+        
+        # 添加 activate 事件监听器
+        echo 'self.addEventListener("activate", function(event) {' >> build/web/flutter_service_worker.js
+        echo '  event.waitUntil(' >> build/web/flutter_service_worker.js
+        echo '    caches.keys().then(function(cacheNames) {' >> build/web/flutter_service_worker.js
+        echo '      return Promise.all(' >> build/web/flutter_service_worker.js
+        echo '        cacheNames.map(function(cacheName) {' >> build/web/flutter_service_worker.js
+        echo '          if (cacheName !== CACHE_NAME) {' >> build/web/flutter_service_worker.js
+        echo '            return caches.delete(cacheName);' >> build/web/flutter_service_worker.js
+        echo '          }' >> build/web/flutter_service_worker.js
+        echo '        })' >> build/web/flutter_service_worker.js
+        echo '      );' >> build/web/flutter_service_worker.js
+        echo '    })' >> build/web/flutter_service_worker.js
+        echo '  );' >> build/web/flutter_service_worker.js
+        echo '});' >> build/web/flutter_service_worker.js
+        
+        # 添加 fetch 事件监听器
+        echo 'self.addEventListener("fetch", function(event) {' >> build/web/flutter_service_worker.js
+        echo '  event.respondWith(' >> build/web/flutter_service_worker.js
+        echo '    caches.match(event.request).then(function(response) {' >> build/web/flutter_service_worker.js
+        echo '      if (response) {' >> build/web/flutter_service_worker.js
+        echo '        return response;' >> build/web/flutter_service_worker.js
+        echo '      }' >> build/web/flutter_service_worker.js
+        echo '      return fetch(event.request).then(function(response) {' >> build/web/flutter_service_worker.js
+        echo '        if (!response || response.status !== 200 || response.type !== "basic") {' >> build/web/flutter_service_worker.js
+        echo '          return response;' >> build/web/flutter_service_worker.js
+        echo '        }' >> build/web/flutter_service_worker.js
+        echo '        const responseToCache = response.clone();' >> build/web/flutter_service_worker.js
+        echo '        caches.open(CACHE_NAME).then(function(cache) {' >> build/web/flutter_service_worker.js
+        echo '          cache.put(event.request, responseToCache);' >> build/web/flutter_service_worker.js
+        echo '        });' >> build/web/flutter_service_worker.js
+        echo '        return response;' >> build/web/flutter_service_worker.js
+        echo '      });' >> build/web/flutter_service_worker.js
+        echo '    })' >> build/web/flutter_service_worker.js
+        echo '  );' >> build/web/flutter_service_worker.js
+        echo '});' >> build/web/flutter_service_worker.js
     
     # 配置 GitHub Pages
     - name: Setup Pages
