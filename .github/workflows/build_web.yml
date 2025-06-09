@@ -56,8 +56,9 @@ jobs:
     - name: Build Web
       run: |
         source .env.sh
-        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --base-href /flutter_web/
-    
+#        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --base-href /flutter_web/
+        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN
+
     # 清理敏感信息和临时文件
     - name: Clean up
       run: |
