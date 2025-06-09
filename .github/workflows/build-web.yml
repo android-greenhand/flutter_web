@@ -85,6 +85,11 @@ jobs:
         # 修改 service worker 配置
         sed -i 's/"\/flutter_web\/"/"\/flutter_web\/"/g' build/web/flutter_service_worker.js
         sed -i 's/"\/flutter_web\//"\/flutter_web\//g' build/web/flutter_service_worker.js
+        # 修改 index.html 中的资源路径
+        sed -i 's/href="\/flutter_web\//href="\/flutter_web\//g' build/web/index.html
+        sed -i 's/src="\/flutter_web\//src="\/flutter_web\//g' build/web/index.html
+        # 修改 service worker 的缓存配置
+        sed -i 's/self.addEventListener("install", function(event) {/self.addEventListener("install", function(event) {\n  event.waitUntil(\n    caches.open("flutter-app").then(function(cache) {\n      return cache.addAll([\n        "\/flutter_web\/",\n        "\/flutter_web\/index.html",\n        "\/flutter_web\/main.dart.js",\n        "\/flutter_web\/flutter.js",\n        "\/flutter_web\/flutter_service_worker.js"\n      ]);\n    })\n  );/g' build/web/flutter_service_worker.js
     
     # 配置 GitHub Pages
     - name: Setup Pages
