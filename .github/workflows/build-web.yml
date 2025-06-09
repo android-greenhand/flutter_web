@@ -67,7 +67,9 @@ jobs:
     - name: Build Web
       run: |
         source .env.sh
-        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --dart-define=FLUTTER_WEB_USE_SKIA=false --base-href /flutter_web/
+        flutter clean
+        flutter pub get
+        flutter build web --release --web-renderer html --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --base-href /flutter_web/
     
     # 清理敏感信息和临时文件
     - name: Clean up
@@ -108,12 +110,6 @@ jobs:
         echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.woff": "assets/fonts/MaterialIcons-Regular.woff",' >> build/web/flutter_service_worker.js
         echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.woff2": "assets/fonts/MaterialIcons-Regular.woff2",' >> build/web/flutter_service_worker.js
         echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.eot": "assets/fonts/MaterialIcons-Regular.eot",' >> build/web/flutter_service_worker.js
-        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.svg": "assets/fonts/MaterialIcons-Regular.svg",' >> build/web/flutter_service_worker.js
-        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.otf": "assets/fonts/MaterialIcons-Regular.otf",' >> build/web/flutter_service_worker.js
-        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.ttf": "assets/fonts/MaterialIcons-Regular.ttf",' >> build/web/flutter_service_worker.js
-        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.woff": "assets/fonts/MaterialIcons-Regular.woff",' >> build/web/flutter_service_worker.js
-        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.woff2": "assets/fonts/MaterialIcons-Regular.woff2",' >> build/web/flutter_service_worker.js
-        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.eot": "assets/fonts/MaterialIcons-Regular.eot",' >> build/web/flutter_service_worker.js
         echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.svg": "assets/fonts/MaterialIcons-Regular.svg"' >> build/web/flutter_service_worker.js
         echo '};' >> build/web/flutter_service_worker.js
         
@@ -123,13 +119,14 @@ jobs:
         echo '    caches.open(CACHE_NAME).then(function(cache) {' >> build/web/flutter_service_worker.js
         echo '      return Promise.all(' >> build/web/flutter_service_worker.js
         echo '        Object.entries(RESOURCES).map(([url, file]) => {' >> build/web/flutter_service_worker.js
-        echo '          return fetch(url)' >> build/web/flutter_service_worker.js
+        echo '          const request = new Request(url, { mode: "no-cors" });' >> build/web/flutter_service_worker.js
+        echo '          return fetch(request)' >> build/web/flutter_service_worker.js
         echo '            .then(response => {' >> build/web/flutter_service_worker.js
         echo '              if (!response.ok) {' >> build/web/flutter_service_worker.js
         echo '                console.warn(`Failed to fetch ${url}, status: ${response.status}`);' >> build/web/flutter_service_worker.js
         echo '                return null;' >> build/web/flutter_service_worker.js
         echo '              }' >> build/web/flutter_service_worker.js
-        echo '              return cache.put(url, response);' >> build/web/flutter_service_worker.js
+        echo '              return cache.put(request, response);' >> build/web/flutter_service_worker.js
         echo '            })' >> build/web/flutter_service_worker.js
         echo '            .catch(error => {' >> build/web/flutter_service_worker.js
         echo '              console.error(`Error caching ${url}:`, error);' >> build/web/flutter_service_worker.js
@@ -163,13 +160,14 @@ jobs:
         echo '      if (response) {' >> build/web/flutter_service_worker.js
         echo '        return response;' >> build/web/flutter_service_worker.js
         echo '      }' >> build/web/flutter_service_worker.js
-        echo '      return fetch(event.request).then(function(response) {' >> build/web/flutter_service_worker.js
+        echo '      const request = new Request(event.request.url, { mode: "no-cors" });' >> build/web/flutter_service_worker.js
+        echo '      return fetch(request).then(function(response) {' >> build/web/flutter_service_worker.js
         echo '        if (!response || response.status !== 200 || response.type !== "basic") {' >> build/web/flutter_service_worker.js
         echo '          return response;' >> build/web/flutter_service_worker.js
         echo '        }' >> build/web/flutter_service_worker.js
         echo '        const responseToCache = response.clone();' >> build/web/flutter_service_worker.js
         echo '        caches.open(CACHE_NAME).then(function(cache) {' >> build/web/flutter_service_worker.js
-        echo '          cache.put(event.request, responseToCache);' >> build/web/flutter_service_worker.js
+        echo '          cache.put(request, responseToCache);' >> build/web/flutter_service_worker.js
         echo '        });' >> build/web/flutter_service_worker.js
         echo '        return response;' >> build/web/flutter_service_worker.js
         echo '      });' >> build/web/flutter_service_worker.js
