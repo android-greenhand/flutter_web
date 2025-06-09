@@ -97,7 +97,24 @@ jobs:
         echo '  "/flutter_web/index.html": "index.html",' >> build/web/flutter_service_worker.js
         echo '  "/flutter_web/main.dart.js": "main.dart.js",' >> build/web/flutter_service_worker.js
         echo '  "/flutter_web/flutter.js": "flutter.js",' >> build/web/flutter_service_worker.js
-        echo '  "/flutter_web/flutter_service_worker.js": "flutter_service_worker.js"' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/flutter_service_worker.js": "flutter_service_worker.js",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/": "assets/",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/AssetManifest.json": "assets/AssetManifest.json",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/FontManifest.json": "assets/FontManifest.json",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/NOTICES": "assets/NOTICES",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf": "assets/packages/cupertino_icons/assets/CupertinoIcons.ttf",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.otf": "assets/fonts/MaterialIcons-Regular.otf",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.ttf": "assets/fonts/MaterialIcons-Regular.ttf",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.woff": "assets/fonts/MaterialIcons-Regular.woff",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.woff2": "assets/fonts/MaterialIcons-Regular.woff2",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.eot": "assets/fonts/MaterialIcons-Regular.eot",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.svg": "assets/fonts/MaterialIcons-Regular.svg",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.otf": "assets/fonts/MaterialIcons-Regular.otf",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.ttf": "assets/fonts/MaterialIcons-Regular.ttf",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.woff": "assets/fonts/MaterialIcons-Regular.woff",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.woff2": "assets/fonts/MaterialIcons-Regular.woff2",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.eot": "assets/fonts/MaterialIcons-Regular.eot",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/assets/fonts/MaterialIcons-Regular.svg": "assets/fonts/MaterialIcons-Regular.svg"' >> build/web/flutter_service_worker.js
         echo '};' >> build/web/flutter_service_worker.js
         
         # 添加 install 事件监听器
@@ -109,14 +126,16 @@ jobs:
         echo '          return fetch(url)' >> build/web/flutter_service_worker.js
         echo '            .then(response => {' >> build/web/flutter_service_worker.js
         echo '              if (!response.ok) {' >> build/web/flutter_service_worker.js
-        echo '                throw new Error(`Failed to fetch ${url}`);' >> build/web/flutter_service_worker.js
+        echo '                console.warn(`Failed to fetch ${url}, status: ${response.status}`);' >> build/web/flutter_service_worker.js
+        echo '                return null;' >> build/web/flutter_service_worker.js
         echo '              }' >> build/web/flutter_service_worker.js
         echo '              return cache.put(url, response);' >> build/web/flutter_service_worker.js
         echo '            })' >> build/web/flutter_service_worker.js
         echo '            .catch(error => {' >> build/web/flutter_service_worker.js
         echo '              console.error(`Error caching ${url}:`, error);' >> build/web/flutter_service_worker.js
+        echo '              return null;' >> build/web/flutter_service_worker.js
         echo '            });' >> build/web/flutter_service_worker.js
-        echo '        })' >> build/web/flutter_service_worker.js
+        echo '        }).filter(Boolean)' >> build/web/flutter_service_worker.js
         echo '      );' >> build/web/flutter_service_worker.js
         echo '    })' >> build/web/flutter_service_worker.js
         echo '  );' >> build/web/flutter_service_worker.js
