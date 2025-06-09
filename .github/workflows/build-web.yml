@@ -86,17 +86,23 @@ jobs:
         # 修改 index.html 中的资源路径
         sed -i 's/href="\/flutter_web\//href="\/flutter_web\//g' build/web/index.html
         sed -i 's/src="\/flutter_web\//src="\/flutter_web\//g' build/web/index.html
-        
-        # 创建新的 service worker 文件
-        cat > build/web/flutter_service_worker.js << 'EOL'
-const CACHE_NAME = 'flutter-app-cache-v1';
-const RESOURCES = {
-  '/flutter_web/': 'index.html',
-  '/flutter_web/index.html': 'index.html',
-  '/flutter_web/main.dart.js': 'main.dart.js',
-  '/flutter_web/flutter.js': 'flutter.js',
-  '/flutter_web/flutter_service_worker.js': 'flutter_service_worker.js'
-};
+    
+    # 创建 service worker 文件
+    - name: Create service worker
+      run: |
+        echo 'const CACHE_NAME = "flutter-app-cache-v1";' > build/web/flutter_service_worker.js
+        echo 'const RESOURCES = {' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/": "index.html",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/index.html": "index.html",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/main.dart.js": "main.dart.js",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/flutter.js": "flutter.js",' >> build/web/flutter_service_worker.js
+        echo '  "/flutter_web/flutter_service_worker.js": "flutter_service_worker.js"' >> build/web/flutter_service_worker.js
+        echo '};' >> build/web/flutter_service_worker.js
+    
+    # 添加 service worker 事件监听器
+    - name: Add service worker event listeners
+      run: |
+        cat >> build/web/flutter_service_worker.js << 'EOL'
 
 self.addEventListener('install', function(event) {
   event.waitUntil(
