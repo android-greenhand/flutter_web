@@ -67,7 +67,7 @@ jobs:
     - name: Build Web
       run: |
         source .env.sh
-        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --base-href /flutter_web/
+        flutter build web --release --dart-define=GITHUB_TOKEN=$GITHUB_TOKEN --base-href /flutter_web/ --web-renderer html
     
     # 清理敏感信息和临时文件
     - name: Clean up
@@ -82,6 +82,9 @@ jobs:
         # 删除可能包含 token 的文件
         find build/web -type f -name "*.js.map" -delete
         find build/web -type f -name "*.dart.js" -delete
+        # 修改 service worker 配置
+        sed -i 's/"\/flutter_web\/"/"\/flutter_web\/"/g' build/web/flutter_service_worker.js
+        sed -i 's/"\/flutter_web\//"\/flutter_web\//g' build/web/flutter_service_worker.js
     
     # 配置 GitHub Pages
     - name: Setup Pages
