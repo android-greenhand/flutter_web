@@ -12,21 +12,17 @@ class UnifiedArticleService {
   static const String contentsPath = 'pages/contents.md';
   // static const String contentsPath = 'logseq/bak/pages/contents/2024-06-28T09_33_18.708Z.Desktop.md';
   
-  static const String _baseUrl = 'https://api.github.com';
+  // 修改为 Vercel 代理服务地址
+  static const String _baseUrl = 'https://ktor-vercel.vercel.app';
 
-  static const String _token = String.fromEnvironment(
-    'GITHUB_TOKEN',
-    defaultValue: '', // 保留原始值作为默认值
-  );
-
+  // 简化的 headers，不需要 GitHub token
   static Map<String, String> get _headers => {
-    'Accept': 'application/vnd.github.v3+json',
-    'Authorization': 'token $_token',
+    'Accept': 'application/json',
   };
 
   /// 获取文章列表，返回 UnifiedArticle 类型
   static Future<List<UnifiedArticle>> getArticleList(String owner, String repo, String path) async {
-    final url = Uri.parse('$_baseUrl/repos/$owner/$repo/contents/$path');
+    final url = Uri.parse('$_baseUrl/api/contents/$path?owner=$owner&repo=$repo');
     dev.log('正在请求文章列表...');
     dev.log('请求 URL: ${url.toString()}');
     dev.log('请求头: ${_headers.toString()}');
@@ -80,7 +76,7 @@ class UnifiedArticleService {
   /// 获取文章内容
   static Future<String> getMarkdownContent(String owner, String repo, String path) async {
     try {
-      final apiUrl = Uri.parse('$_baseUrl/repos/$owner/$repo/contents/$path');
+      final apiUrl = Uri.parse('$_baseUrl/api/contents/$path?owner=$owner&repo=$repo');
       print('🔍 [UnifiedArticleService] 开始获取文件内容');
       print('📝 [UnifiedArticleService] 仓库: $owner/$repo');
       print('📝 [UnifiedArticleService] 路径: $path');
@@ -119,7 +115,7 @@ class UnifiedArticleService {
   }
 
   static Future<String> getImageContent(String fileName) async {
-    final url = Uri.parse('$_baseUrl/repos/$owner/$repo/contents/$fileName');
+    final url = Uri.parse('$_baseUrl/api/contents/$fileName?owner=$owner&repo=$repo');
     final response = await http.get(url, headers: _headers);
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = json.decode(response.body);
@@ -130,7 +126,7 @@ class UnifiedArticleService {
 
   static Future<Map<String, dynamic>?> getFileCommitInfo(String owner, String repo, String path) async {
     try {
-      final url = Uri.parse('$_baseUrl/repos/$owner/$repo/commits?path=$path&per_page=1');
+      final url = Uri.parse('$_baseUrl/api/commits/$path?owner=$owner&repo=$repo');
       final response = await http.get(url, headers: _headers);
       if (response.statusCode == 200) {
         final List<dynamic> commits = json.decode(response.body);

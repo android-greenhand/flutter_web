@@ -1,5 +1,10 @@
+# 工作流名称：构建 Flutter Web 应用
 name: Build Flutter Web
 
+# 触发条件：
+# 1. 当代码推送到 main 分支时
+# 2. 当创建针对 main 分支的 Pull Request 时
+# 3. 手动触发工作流时
 on:
   push:
     branches: [ main ]  # 或者你的主分支名称
@@ -7,28 +12,188 @@ on:
     branches: [ main ]  # 或者你的主分支名称
   workflow_dispatch:    # 允许手动触发
 
+# 工作流权限配置：需要写入权限来部署到目标仓库
+permissions:
+  contents: write   # 写入权限，用于推送到目标仓库
+
+# 并发控制：防止多个部署同时进行
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
+  # 构建任务
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # 使用最新的 Ubuntu 运行器
 
     steps:
-    - uses: actions/checkout@v3
+    # 检出代码
+    - uses: actions/checkout@v4
     
+    # 设置 Flutter 环境
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.19.0'  # 使用你项目中的 Flutter 版本
-        channel: 'stable'
+        flutter-version: '3.32.2'  # 使用错误信息建议的版本
+        channel: 'stable'         # 使用稳定版
+        cache: true              # 启用缓存
+        cache-key: flutter-3.32.2-stable  # 缓存键
     
+    # 启用 Flutter Web 支持
+    - name: Enable Flutter Web
+      run: flutter config --enable-web
+    
+    # 显示 Flutter 版本信息（用于调试）
+    - name: Get Flutter version
+      run: flutter --version
+    
+    # 安装项目依赖
     - name: Install dependencies
       run: flutter pub get
     
+    # 构建 Web 应用（使用 Vercel 代理服务器，不需要传递 GitHub Token）
     - name: Build Web
       run: |
-        flutter build web --release --dart-define=GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+        flutter clean
+        flutter pub get
+        # 构建 Web 应用并设置正确的基础路径（部署到 android-greenhand.github.io 根目录）
+        flutter build web --release --base-href /
     
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: web-build
-        path: build/web/ 
+    # 清理构建产物（移除敏感信息清理步骤，因为不再需要）
+    - name: Clean up
+      run: |
+        # 暂时不删除任何文件，便于排查产物缺失问题
+        # find build/web -type f -name "*.js.map" -delete
+        # find build/web -type f -name "*.dart.js" -delete
+        
+        # 显示构建后的文件结构（用于调试）
+        echo "=== 构建后的文件结构 ==="
+        find build/web -type f | head -20
+        
+        # 创建 .nojekyll 文件，禁用 Jekyll 处理
+        touch build/web/.nojekyll
+        echo "Created .nojekyll file to disable Jekyll processing"
+    
+    # 创建 service worker 文件
+    - name: Create service worker
+      run: |
+        # 创建简化的 service worker 文件
+        cat > build/web/flutter_service_worker.js << 'EOF'
+        const CACHE_NAME = "flutter-app-cache-v1";
+        
+        self.addEventListener("install", function(event) {
+          console.log("Service Worker installing...");
+          event.waitUntil(
+            caches.open(CACHE_NAME).then(function(cache) {
+              console.log("Service Worker cache opened");
+              return cache;
+            })
+          );
+        });
+        
+        self.addEventListener("activate", function(event) {
+          console.log("Service Worker activating...");
+          event.waitUntil(
+            caches.keys().then(function(cacheNames) {
+              return Promise.all(
+                cacheNames.map(function(cacheName) {
+                  if (cacheName !== CACHE_NAME) {
+                    console.log("Deleting old cache:", cacheName);
+                    return caches.delete(cacheName);
+                  }
+                })
+              );
+            })
+          );
+        });
+        
+        self.addEventListener("fetch", function(event) {
+          // 跳过 chrome-extension 和其他不支持的协议
+          if (event.request.url.startsWith("chrome-extension://") || 
+              event.request.url.startsWith("chrome://") ||
+              event.request.url.startsWith("moz-extension://") ||
+              event.request.url.startsWith("safari-extension://")) {
+            return;
+          }
+          
+          // 跳过 CanvasKit 资源，让它们直接从 CDN 加载
+          if (event.request.url.includes("gstatic.com/flutter-canvaskit") ||
+              event.request.url.includes("canvaskit.js") ||
+              event.request.url.includes("canvaskit.wasm")) {
+            return;
+          }
+          
+          // 只处理同源请求
+          if (!event.request.url.startsWith(self.location.origin)) {
+            return;
+          }
+          
+          event.respondWith(
+            caches.match(event.request).then(function(response) {
+              if (response) {
+                return response;
+              }
+              
+              return fetch(event.request).then(function(response) {
+                // 只缓存成功的响应
+                if (!response || response.status !== 200 || response.type !== "basic") {
+                  return response;
+                }
+                
+                const responseToCache = response.clone();
+                caches.open(CACHE_NAME).then(function(cache) {
+                  cache.put(event.request, responseToCache);
+                });
+                
+                return response;
+              }).catch(function(error) {
+                console.error("Fetch failed:", error);
+                return new Response("Network error", { status: 503 });
+              });
+            })
+          );
+        });
+        EOF
+        
+        echo "Created simplified service worker"
+    
+    # 部署到 android-greenhand.github.io 仓库
+    - name: Deploy to android-greenhand.github.io
+      run: |
+        # 配置 Git
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        
+        # 显示构建产物的文件结构
+        echo "=== 构建产物文件结构 ==="
+        find build/web -type f | head -20
+        
+        # 克隆目标仓库（使用 PAT）
+        git clone https://${{ secrets.PAT_TOKEN }}@github.com/android-greenhand/android-greenhand.github.io.git deploy-repo
+        
+        # 清理根目录（保留 .nojekyll 等文件）
+        cd deploy-repo
+        find . -maxdepth 1 ! -name '.' ! -name '..' ! -name '.git' ! -name '.nojekyll' -exec rm -rf {} +
+        
+        # 复制构建产物到根目录
+        cp -r ../build/web/* .
+        
+        # 显示部署后的文件结构
+        echo "=== 部署后文件结构 ==="
+        find . -maxdepth 2 -type f | head -20
+        
+        # 检查关键文件是否存在
+        echo "=== 检查关键文件 ==="
+        ls -la
+        ls -la main.dart.js 2>/dev/null || echo "main.dart.js not found"
+        ls -la index.html 2>/dev/null || echo "index.html not found"
+        
+        # 确保 .nojekyll 文件存在
+        touch .nojekyll
+        
+        # 提交并推送
+        git add .
+        git commit -m "Deploy Flutter Web App - $(date)"
+        git push origin main
+        
+        echo "Deployed to https://android-greenhand.github.io/" 

@@ -53,6 +53,10 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
+    GoRoute(
+      path: '/flutter/:*',
+      redirect: (context, state) => '/',
+    ),
   ],
   errorBuilder: (context, state) {
     print('路由错误:');
